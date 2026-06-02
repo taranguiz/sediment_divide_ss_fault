@@ -18,8 +18,14 @@ Parameters that do not require a new steady state:
 
 - `slip_rate`
 - `total_model_time`
+- total fault slip / run duration
 - output frequency
 - PRR sampling settings
+
+For slip-rate comparisons, use a shared total fault slip rather than a
+shared model duration. The current total_slip for the hub matrix is `1000 m`, so
+the runner computes different `total_model_time` values for different slip
+rates.
 
 ## Planned Slip-Rate Runs
 

@@ -473,23 +473,29 @@ def run_geomorf_loop(
         prr_xlsx = os.path.join(tabular_output_dir, f"{config.model_name}_prr_at_quakes.xlsx")
         prr_png = os.path.join(tabular_output_dir, f"{config.model_name}_prr_at_quakes.png")
         prr_df.to_csv(prr_csv, index=False)
-        with pd.ExcelWriter(prr_xlsx, engine="openpyxl") as writer_xlsx:
-            prr_df.to_excel(writer_xlsx, sheet_name="prr_at_quakes", index=False)
-            summary = pd.DataFrame(
-                [
-                    {
-                        "model_name": config.model_name,
-                        "n_events": len(prr_df),
-                        "PRR_DT_mean": float(prr_df["PRR_DT"].mean()),
-                        "PRR_DT_std": float(prr_df["PRR_DT"].std()),
-                        "PRR_DT_min": float(prr_df["PRR_DT"].min()),
-                        "PRR_DT_max": float(prr_df["PRR_DT"].max()),
-                        "Nae": float(prr_df["Nae"].iloc[0]),
-                        "slip_rate_mm_yr": float(config.slip_rate),
-                    }
-                ]
-            )
-            summary.to_excel(writer_xlsx, sheet_name="summary", index=False)
+        summary = pd.DataFrame(
+            [
+                {
+                    "model_name": config.model_name,
+                    "n_events": len(prr_df),
+                    "PRR_DT_mean": float(prr_df["PRR_DT"].mean()),
+                    "PRR_DT_std": float(prr_df["PRR_DT"].std()),
+                    "PRR_DT_min": float(prr_df["PRR_DT"].min()),
+                    "PRR_DT_max": float(prr_df["PRR_DT"].max()),
+                    "Nae": float(prr_df["Nae"].iloc[0]),
+                    "slip_rate_mm_yr": float(config.slip_rate),
+                }
+            ]
+        )
+        prr_summary_csv = os.path.join(tabular_output_dir, f"{config.model_name}_prr_summary.csv")
+        summary.to_csv(prr_summary_csv, index=False)
+        try:
+            with pd.ExcelWriter(prr_xlsx, engine="openpyxl") as writer_xlsx:
+                prr_df.to_excel(writer_xlsx, sheet_name="prr_at_quakes", index=False)
+                summary.to_excel(writer_xlsx, sheet_name="summary", index=False)
+        except ImportError:
+            prr_xlsx = None
+            print("openpyxl is not installed; skipped PRR XLSX workbook.")
 
         fig, ax = plt.subplots(figsize=(8, 5))
         ax.plot(prr_df["model_year"], prr_df["PRR_DT"], marker="o", ms=3, lw=1)
@@ -503,7 +509,9 @@ def run_geomorf_loop(
         plt.close(fig)
 
         print(f"Saved PRR-at-quakes CSV to {prr_csv}")
-        print(f"Saved PRR-at-quakes workbook to {prr_xlsx}")
+        print(f"Saved PRR summary CSV to {prr_summary_csv}")
+        if prr_xlsx is not None:
+            print(f"Saved PRR-at-quakes workbook to {prr_xlsx}")
         print(f"Saved PRR-at-quakes plot to {prr_png}")
 
     # Ensure Mean_da, Mean_elev, Mean_soil are numpy arrays

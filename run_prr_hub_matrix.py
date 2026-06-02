@@ -44,6 +44,16 @@ def _sparse_output_frequency(total_model_time: float, dt_model: float, max_outpu
     return float(steps * dt_model)
 
 
+def _model_time_for_total_slip(total_slip: float, slip_rate_mm_yr: float, dt_model: float) -> float:
+    """Return model duration needed to reach at least total_slip of slip."""
+    if slip_rate_mm_yr <= 0:
+        raise ValueError("slip_rate_mm_yr must be positive")
+    slip_rate_m_yr = slip_rate_mm_yr / 1000.0
+    raw_time = total_slip / slip_rate_m_yr
+    steps = max(1, math.ceil(raw_time / dt_model))
+    return float(steps * dt_model)
+
+
 def _template_to_nested_config(model_name: str, template: dict, slip_rate: float, frequency: float) -> dict:
     return {
         "saving": {
@@ -101,8 +111,10 @@ def _template_to_nested_config(model_name: str, template: dict, slip_rate: float
 def _build_config(row: dict[str, str], template: dict, *, save_topo_plots: bool) -> SimpleNamespace:
     model_name = row["model_name"]
     slip_rate = float(row["slip_rate_mm_yr"])
-    total_model_time = float(row["total_model_time"])
+    total_slip = float(row["total_slip"])
     max_outputs = int(row["max_netcdf_outputs"])
+    dt_model = float(template["dt_model"])
+    total_model_time = _model_time_for_total_slip(total_slip, slip_rate, dt_model)
 
     data = dict(template)
     data["model_name"] = model_name
@@ -113,10 +125,11 @@ def _build_config(row: dict[str, str], template: dict, *, save_topo_plots: bool)
     data["save_location"] = f"output/{model_name}"
     data["save_format"] = "netcdf"
     data["slip_rate"] = slip_rate
+    data["total_slip"] = total_slip
     data["total_model_time"] = total_model_time
     data["frequency_output"] = _sparse_output_frequency(
         total_model_time,
-        float(template["dt_model"]),
+        dt_model,
         max_outputs,
     )
     data["initial_state_model_name"] = row["initial_state_model_name"]
@@ -136,6 +149,7 @@ def _build_config(row: dict[str, str], template: dict, *, save_topo_plots: bool)
         data["frequency_output"],
     )
     data["config"]["time"]["total_model_time"] = total_model_time
+    data["config"]["tectonics"]["total_slip"] = total_slip
 
     return SimpleNamespace(**data)
 
@@ -225,6 +239,7 @@ def main() -> None:
         print(
             f"{row['plot_label']} -> {config.model_name}: "
             f"slip={config.slip_rate:g} mm/yr, "
+            f"total_slip={config.total_slip:g} m, "
             f"time={config.total_model_time:g} yr, "
             f"NetCDF every {config.frequency_output:g} yr, "
             f"steady={steady_path.name}"

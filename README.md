@@ -14,6 +14,10 @@ and compare:
 - PRR vs `Nae`
 - PRR time series after earthquake events
 
+Runs in `config/prr_hub_run_matrix.csv` use the same total_slip,
+currently `1000 m`. The runner computes `total_model_time` from slip rate, so
+slow faults run longer than fast faults.
+
 The current PRR definition is:
 
 ```text
@@ -74,6 +78,16 @@ but skips topography PNG frames to reduce disk use. To save PNG frames too:
 
 ```bash
 python run_prr_hub_matrix.py --label Sed-3_20 --with-topo-plots
+```
+
+The matrix stores `total_slip`, not fixed run duration. For the current
+`total_slip = 1000 m`, run durations are:
+
+```text
+0.5 mm/yr -> 2,000,000 yr
+5 mm/yr   ->   200,000 yr
+10 mm/yr  ->   100,000 yr
+20 mm/yr  ->    50,000 yr
 ```
 
 ## Required Steady States For Planned Runs

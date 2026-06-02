@@ -107,6 +107,23 @@ output/<model_name>/netcdf_outputs/<model_name>/
 The hub runner keeps topography PNG frames off by default. This helps keep the
 run close to the goal of about 10 NetCDF snapshots plus tabular PRR outputs.
 
+The run matrix uses the same `total_slip` for every slip rate. The
+current `total_slip` is `1000 m`, and `run_prr_hub_matrix.py` computes run duration
+from:
+
+```text
+total_model_time = total_slip / (slip_rate_mm_yr / 1000)
+```
+
+For `total_slip = 1000 m`:
+
+```text
+0.5 mm/yr -> 2,000,000 yr
+5 mm/yr   ->   200,000 yr
+10 mm/yr  ->   100,000 yr
+20 mm/yr  ->    50,000 yr
+```
+
 ## Planned Naming
 
 Use manuscript labels in plots:
