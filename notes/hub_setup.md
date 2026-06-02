@@ -1,0 +1,131 @@
+# OpenEarthscape Hub Setup
+
+Hub URL:
+
+```text
+https://frontier.openearthscape.org/user/taranguiz/lab
+```
+
+## GitHub
+
+The local repository remote is:
+
+```text
+https://github.com/taranguiz/sediment_divide_ss_fault.git
+```
+
+On the hub, clone or pull this repository, then work from the repository root.
+
+## Data Policy
+
+Keep generated data out of Git. This includes:
+
+- NetCDF snapshots
+- steady-state pickle/NetCDF files
+- output plots and videos
+- PRR summary workbooks generated from runs
+
+These files belong in hub storage or local storage, not in Git history.
+
+## Required Steady-State Uploads
+
+Create this folder on the hub:
+
+```bash
+mkdir -p output/steady_state_files
+```
+
+Upload/copy these files into it:
+
+```text
+final_state_Sediment_3_Duvall_Tucker.pkl
+final_state_Sediment_4_Duvall_Tucker.pkl
+final_state_Sediment_5_Duvall_Tucker.pkl
+final_state_Sediment_4_Duvall_Tucker_5.pkl
+```
+
+Optional:
+
+```text
+final_state_Duvall_Tucker_5.nc
+```
+
+The required sediment steady states are about 28 MB total locally. Including the
+optional DT NetCDF is about 31 MB total.
+
+## Check Before Running
+
+From the repository root:
+
+```bash
+python run_prr_hub_matrix.py --dry-run
+```
+
+This checks that each selected run has its steady-state file available.
+
+## Running Models
+
+Run one model at a time on a small hub allocation:
+
+```bash
+python run_prr_hub_matrix.py --label Sed-3_20
+```
+
+Run all enabled sediment variants:
+
+```bash
+python run_prr_hub_matrix.py
+```
+
+Run the optional DT comparison:
+
+```bash
+python run_prr_hub_matrix.py --label DT_10
+```
+
+## Outputs
+
+Each run writes to:
+
+```text
+output/<model_name>/
+```
+
+Important PRR files:
+
+```text
+output/<model_name>/tabular_outputs/<model_name>/<model_name>_prr_at_quakes.csv
+output/<model_name>/tabular_outputs/<model_name>/<model_name>_prr_at_quakes.xlsx
+```
+
+Sparse NetCDF snapshots:
+
+```text
+output/<model_name>/netcdf_outputs/<model_name>/
+```
+
+The hub runner keeps topography PNG frames off by default. This helps keep the
+run close to the goal of about 10 NetCDF snapshots plus tabular PRR outputs.
+
+## Planned Naming
+
+Use manuscript labels in plots:
+
+```text
+Sed-3_20
+```
+
+Use machine-safe model/output folder names:
+
+```text
+Sed_3_20
+```
+
+Slip-rate encoding:
+
+```text
+05 = 0.5 mm/yr
+5 = 5 mm/yr
+10 = 10 mm/yr
+20 = 20 mm/yr
+```

@@ -1,30 +1,30 @@
 #config file for parameters
 saving:
-  model_name: 'test_7' #'S05_K_D_C'
-  home_path: '/Users/taranguiz/Research/steady-to-faulting'
+  model_name: 'Sediment_4_Duvall_Tucker_5' #'S05_K_D_C'
+  home_path: '/Users/taranguiz/Research/sediment_divide_ss_fault'
   output_filetype: 'netcdf' # netcdf or pickle
   frequency_output: 10000 # how often do we want to save the grids for dynamic_loop in years
 
 comments:
-  alt_name: 'changed_slip_function'
+  alt_name: 'Sediment_4_Duvall_Tucker_5_no_fines'
 
 shape:
-  ymax: 1000
-  xmax: 3000
-  dxy: 10 #spacing
+  ymax: 200
+  xmax: 4000
+  dxy: 5 #spacing
 
 geomorphology:
-  H0: 10  #original soil depth
-  uplift_rate: 9.0e-05 #1.0e-3
-  Sc: 0.7 #1 #critical slope for hillslope diffusion
+  H0: 5  #original soil depth
+  uplift_rate: 0.001 #1.0e-3
+  Sc: 1 #1 #critical slope for hillslope diffusion
   Hstar: 0.1 #1 characteristic transport depth, m
-  V0: 0.1 #10 #0.1 #0.1 #transport velocity coefficient, D: Hstar*V0 #effective(maximum) diffusivity
-  P0: 1e-4 #maximum soil production rate
-  run_off: 0.5 #run off rate
-  K_sed: 1e-05 #1e-05 #sediment erodibility 0.000067
-  K_br: 8e-06 #8e-06 #bedrock erodibility 0.000053
-  F_f: 0.5 #fraction of fine sediment
-  phi: 0.5 #sediment porosity
+  V0: 0.08 #10 #0.1 #0.1 #transport velocity coefficient, D: Hstar*V0 #effective(maximum) diffusivity
+  P0: 0.0001 #maximum soil production rate
+  run_off: 1 #run off rate
+  K_sed: 0.00234 #sediment erodibility 0.000067
+  K_br: 0.000234 #bedrock erodibility 0.000053
+  F_f: 0 #fraction of fine sediment
+  phi: 0 #sediment porosity
   H_star: 0.1 #sediment entrainment lenght scale
   Vs: 1 #velocity of sediment
   m_sp: 0.5 #exponent ondrainage area stream power
@@ -33,15 +33,15 @@ geomorphology:
   sp_crit_br: 0.0 #bedrock erosion threshold
 
 tectonics:
-  total_slip: 3000 #120000.0
+  total_slip: 500 #120000.0
   method: 'roll' #or drop
-  slip_rate: 10 # mm/yr
+  slip_rate: 5 # mm/yr
 
 time:
-  total_model_time: 300000 #6000000 
+  total_model_time: 100000 #6000000
   # This can also be used as start time after an initial run to start from the last run year
-  total_steady_time: 6000000 #total time for steady state
-  dt_steady: 200
+  total_steady_time: 300000 #total time for steady state
+  dt_steady: 100
   dt_model: 100
 
 climate:

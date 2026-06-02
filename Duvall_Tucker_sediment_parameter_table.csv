@@ -1,0 +1,18 @@
+Parameter,Duvall_Tucker (baseline),Sediment_2,Sediment_3,Sediment_4,Sediment_4_20_,Sediment_5
+alt_name,detachment,adding_sediment_2,adding_sediment_3,adding_sediment_4_hillslopes,adding_sediment_4_hillslopes_fast,adding_sediment_5_soil_production_rate
+K_sed,0.000234,0.00234,0.00234,0.00234,0.00234,0.00234
+K_br,0.000234,0.000234,0.000234,0.000234,0.000234,0.000234
+Vs (sediment settling velocity),0,1,1,1,1,1
+F_f (fraction fines),1,0.5,0.5,0.5,0.5,0.5
+phi (porosity),0,0,0,0,0,0
+H_star (SPACE entrainment length m),1e-8,0.1,0.1,0.1,0.1,0.1
+H0 (initial soil depth m),0,5,5,5,5,5
+Hstar (transport decay depth m),1,1,1,0.1,0.1,0.1
+V0 (transport velocity m/yr),0.008,0.008,0.008,0.08,0.08,0.08
+D (V0×Hstar m²/yr),0.008,0.008,0.008,0.008,0.008,0.008
+P0 (max soil production m/yr),1e-8,1e-8,1e-8,0.0001,0.0001,0.001
+Sc (critical slope),1,1,1,1,1,1
+run_off,1,1,0.5,1,1,1
+slip_rate (mm/yr),0.5,0.5,0.5,0.5,10,0.5
+total_model_time (yr),1000000,1000000,1000000,1000000,50000,1000000
+total_steady_time (yr),1300000,300000,300000,300000,300000,300000

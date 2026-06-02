@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # import time
 import numpy as np
+import numpy_compat  # noqa: F401  # NumPy 2.0 vs Landlab: must run before landlab
+
 import matplotlib.pyplot as plt
+import pandas as pd
 # import time
 import pickle
 from collections import defaultdict
@@ -16,7 +19,6 @@ from landlab.io.netcdf import read_netcdf
 from landlab.io.netcdf import write_netcdf
 
 #Hillslope geomorphology
-from landlab.components import ExponentialWeatherer
 from landlab.components import DepthDependentTaylorDiffuser
 from landlab.components import DepthDependentDiffuser
 
@@ -26,23 +28,68 @@ from landlab.components import FlowAccumulator, Space, FastscapeEroder, Priority
 from landlab.components.space import SpaceLargeScaleEroder
 
 from ss_fault_function import ss_fault
+from landlab_compat import exponential_weatherer
+from prr_metrics import profile_row_indices, compute_prr_dt, compute_nae
 from util import get_file_sequence, add_file_to_writer
 from copy import deepcopy # Ensure deepcopy is specifically imported
 #READING STEADY STATE TOPO
 
 def read_grid(config):
     
-    """Read the final steady state from pickle file efficiently"""
+    """Read the final steady state grid.
+    Tries, in order:
+    1) Pickle single-grid file: output/steady_state_files/final_state_{model_name}.pkl
+    2) Pickle single-grid file: {save_location}/final_state_{model_name}.pkl
+    3) Pickle grid-states file: {save_location}/{model_name}_grid_states.pkl (uses grid at latest time)
+    4) NetCDF single-grid file(s) in output/steady_state_files, e.g. final_state_{model_name}.nc
+    """
     print("reading steady topo")
-    # Read the final steady state
-    with open(f'{config.home_path}/output/steady_state_files/final_state.pkl', 'rb') as f:
-        # Load only the last state
-        final_state = pickle.load(f)
-        #print(final_state)
-        #final_time = max(final_state.keys())
-        #final_state = steady_states[final_time]
-        print("Loaded final state")
-    
+    model_name = getattr(config, "initial_state_model_name", config.model_name)
+    home = config.home_path
+    save_loc = config.save_location
+
+    # Candidate pickle paths: prefer final_state in steady_state_files, then in save_location, then grid_states
+    paths_to_try = [
+        os.path.join(home, "output", "steady_state_files", f"final_state_{model_name}.pkl"),
+        os.path.join(home, save_loc, f"final_state_{model_name}.pkl"),
+        os.path.join(home, save_loc, f"{model_name}_grid_states.pkl"),
+    ]
+    loaded = None
+    path_used = None
+    for p in paths_to_try:
+        if os.path.isfile(p):
+            path_used = p
+            with open(p, "rb") as f:
+                loaded = pickle.load(f)
+            print(f"Loaded from pickle: {p}")
+            break
+
+    # If no pickle found, try NetCDF steady-state files (minimal support)
+    if loaded is None:
+        nc_paths_to_try = [
+            os.path.join(home, "output", "steady_state_files", f"final_state_{model_name}.nc"),
+            # Also allow a user-defined suffix like final_state_{model_name}_5.nc
+            os.path.join(home, "output", "steady_state_files", f"final_state_{model_name}_5.nc"),
+        ]
+        for p in nc_paths_to_try:
+            if os.path.isfile(p):
+                path_used = p
+                loaded = read_netcdf(p)
+                print(f"Loaded grid from NetCDF: {p}")
+                break
+        if loaded is None:
+            raise FileNotFoundError(
+                f"No initial state found. Tried pickle paths: {paths_to_try} and NetCDF paths: {nc_paths_to_try}"
+            )
+
+    # If it's a dict of time -> grid (grid_states format), take the grid at the latest time
+    if isinstance(loaded, dict) and len(loaded) > 0:
+        final_time = max(loaded.keys())
+        final_state = loaded[final_time]
+        print(f"Using grid at time {final_time} from grid_states file.")
+    else:
+        final_state = loaded
+
     final_state.set_closed_boundaries_at_grid_edges(
         bottom_is_closed=False, 
         left_is_closed=True,
@@ -57,7 +104,59 @@ def save_grid_state(mg, time):
         state[f'at_node_{field_name}'] = field_data.copy()
     return state
 
-def run_geomorf_loop(config, writer):
+
+def _sample_prr(mg, config, fault_row, time, event_number):
+    """Sample full-profile PRR after a slip event."""
+    nrows = int(mg.number_of_node_rows)
+    ncols = int(mg.number_of_node_columns)
+    divide_row = nrows - 1
+    row_near, row_far = profile_row_indices(fault_row, divide_row)
+    z_2d = mg.at_node["topographic__elevation"].reshape((nrows, ncols))
+    prr = compute_prr_dt(z_2d, row_near, row_far)
+    nae = compute_nae(config.slip_rate, config.K_br, config.D)
+
+    return {
+        "event_number": event_number,
+        "model_year": float(time),
+        "calendar_year": float(config.total_steady_time + time),
+        "slip_rate_mm_yr": float(config.slip_rate),
+        "Nae": nae,
+        "fault_row": int(fault_row),
+        "divide_row": int(divide_row),
+        "row_near": int(row_near),
+        "row_far": int(row_far),
+        "fault_y": float(mg.node_y[fault_row * ncols]),
+        "divide_y": float(mg.node_y[divide_row * ncols]),
+        "y_near": float(mg.node_y[row_near * ncols]),
+        "y_far": float(mg.node_y[row_far * ncols]),
+        "PRR_DT": prr["PRR_DT"],
+        "R_near": prr["R_near"],
+        "R_far": prr["R_far"],
+    }
+
+def run_geomorf_loop(
+    config,
+    writer=None,
+    *,
+    interactive_plots=False,
+    save_outputs=True,
+    sample_prr_at_quakes=False,
+):
+    """Run the geomorphic dynamics loop from a steady-state grid.
+
+    Parameters
+    ----------
+    config : ModelConfig
+    writer : optional
+        imageio writer for MP4 from saved PNG frames. Unused if ``save_outputs`` is False.
+    interactive_plots : bool
+        If True, show topography figures with ``plt.show`` instead of saving PNGs (pair with ``save_outputs=False`` for quick tests).
+    save_outputs : bool
+        If False, skip NetCDF/pickle/tabular/PNG/MP4 outputs (still runs the simulation).
+    sample_prr_at_quakes : bool
+        If True, calculate PRR immediately after each slip event and save a PRR
+        timeseries CSV/XLSX/PNG when ``save_outputs`` is True.
+    """
     mg = read_grid(config)
     print(mg.at_node.keys())
     #exit()
@@ -72,19 +171,16 @@ def run_geomorf_loop(config, writer):
     ]
 
     # Define base output directory for pickle files
-    
-    if hasattr(config, 'save_format') and config.save_format == 'pickle':
+    pickle_output_filename = None
+    if save_outputs and hasattr(config, 'save_format') and config.save_format == 'pickle':
         pickle_output_dir = os.path.join(config.home_path, config.save_location, 'pickle_outputs', config.model_name)
         os.makedirs(pickle_output_dir, exist_ok=True)
         pickle_output_filename = os.path.join(pickle_output_dir, f"{config.model_name}_dynamic_states.pkl")
-    else:
-        # Fallback or define if only netcdf is primary, though loading below is pickle-specific
-        pickle_output_filename = None # Or some default non-saving path
 
     grid_states = defaultdict(dict) # Initialize grid_states
 
     # Try to load existing states if they exist (Pickle specific)
-    if hasattr(config, 'save_format') and config.save_format == 'pickle' and pickle_output_filename:
+    if save_outputs and hasattr(config, 'save_format') and config.save_format == 'pickle' and pickle_output_filename:
         try:
             with open(pickle_output_filename, 'rb') as f:
                 grid_states = pickle.load(f)
@@ -93,7 +189,7 @@ def run_geomorf_loop(config, writer):
             print(f"Pickle file {pickle_output_filename} not found, starting fresh.")
         except (pickle.UnpicklingError, EOFError) as e:
             print(f"Error loading pickle file {pickle_output_filename}: {e}. Starting fresh.")
-    elif not hasattr(config, 'save_format'):
+    elif save_outputs and not hasattr(config, 'save_format'):
         print("Warning: config.save_format is not set. Saving and Loading behavior may be undefined.")
 
     z = mg.at_node['topographic__elevation']
@@ -131,13 +227,12 @@ def run_geomorf_loop(config, writer):
     Mean_soil= np.append(Mean_soil, np.mean(mg.at_node['soil__depth']))
     Mean_elev= np.append(Mean_elev, np.mean(mg.at_node['topographic__elevation']))
     quakes_times=[]
+    prr_rows = []
     
     #instantiate components
     print("inititializing components")
 
-    expweath=ExponentialWeatherer(mg, 
-                                soil_production_maximum_rate=config.P0, 
-                                soil_production_decay_depth=config.Hstar)
+    expweath = exponential_weatherer(mg, config.P0, config.Hstar)
 
     # Hillslope with Taylor Diffuser
     ddtd=DepthDependentTaylorDiffuser(mg,slope_crit=config.Sc,
@@ -206,6 +301,16 @@ def run_geomorf_loop(config, writer):
             # expweath.calc_soil_prod_rate()
             # ddtd.run_one_step(dt=1250)
             quakes_times=np.append(quakes_times, time)
+            if sample_prr_at_quakes:
+                prr_rows.append(
+                    _sample_prr(
+                        mg,
+                        config,
+                        fault_loc_y,
+                        time,
+                        event_number=len(prr_rows) + 1,
+                    )
+                )
             print('one slip')
         
         accumulate += desired_slip_per_event
@@ -225,21 +330,27 @@ def run_geomorf_loop(config, writer):
         #             pass
 
         
-        if time%1000 == 0: #time>0 and
-            # fig1 = plt.figure(figsize=[8, 8])
+        save_topo_plots = getattr(config, "save_topo_plots", True)
+        topo_plot_frequency = getattr(config, "topo_plot_frequency", 2000)
+        if save_topo_plots and time%topo_plot_frequency == 0: #time>0 and
             imshow_grid(mg, z, cmap='coolwarm', shrink=shrink, grid_units=['m', 'm'])
             plt.title('Topography after ' + str(int(config.total_steady_time + time)) + ' years')
-            # plt.show()
-            loop_topo_img  = f'{config.home_path}/{config.save_location}/{config.model_name}{get_file_sequence(int(config.total_steady_time + time), config)}.png'
-            plt.savefig(
-                loop_topo_img,
-                dpi=300, facecolor='white'
-            )
-            add_file_to_writer(writer, loop_topo_img)
+            if interactive_plots:
+                plt.tight_layout()
+                plt.show(block=False)
+                plt.pause(0.8)
+            if save_outputs:
+                loop_topo_img  = f'{config.home_path}/{config.save_location}/{config.model_name}{get_file_sequence(int(config.total_steady_time + time), config)}.png'
+                plt.savefig(
+                    loop_topo_img,
+                    dpi=300, facecolor='white'
+                )
+                if writer is not None:
+                    add_file_to_writer(writer, loop_topo_img)
 
             plt.clf()
             
-        if time%config.frequency_output == 0: # Removed time>0 condition to allow saving at t=0 if frequency allows
+        if save_outputs and time%config.frequency_output == 0: # Removed time>0 condition to allow saving at t=0 if frequency allows
             if hasattr(config, 'save_format'):
                 if config.save_format == 'pickle':
                     # Save grid state to memory (useful for current session, e.g. for final pickle dump if selected)
@@ -290,7 +401,7 @@ def run_geomorf_loop(config, writer):
     # Save final timestep
     grid_states[config.total_model_time] = deepcopy(mg) # Store final state in memory
 
-    if hasattr(config, 'save_format'):
+    if save_outputs and hasattr(config, 'save_format'):
         if config.save_format == 'pickle':
             if pickle_output_filename:
                 print(f"Final save of grid states to Pickle...")
@@ -328,23 +439,72 @@ def run_geomorf_loop(config, writer):
                 print(f"Error saving final NetCDF file {netcdf_filename}: {e}")
         else:
             print(f"Unknown save_format: {config.save_format}. No final data saved.")
-    else:
+    elif save_outputs:
         print("Warning: config.save_format not set. No final data saved.")
     
-    imshow_grid(mg, z, cmap='coolwarm', shrink=shrink, grid_units=['m', 'm'])
-    plt.title('Topography after ' + str(int(config.total_steady_time + config.total_model_time)) + ' years')
-    loop_topo_img  = f'{config.home_path}/{config.save_location}/{config.model_name}{get_file_sequence(int(config.total_steady_time + config.total_model_time), config)}.png'
-    plt.savefig(loop_topo_img,
-                dpi=300, 
-                facecolor='white'
-                )
-    add_file_to_writer(writer, loop_topo_img)
-    plt.clf()
+    if getattr(config, "save_topo_plots", True) or interactive_plots:
+        imshow_grid(mg, z, cmap='coolwarm', shrink=shrink, grid_units=['m', 'm'])
+        plt.title('Topography after ' + str(int(config.total_steady_time + config.total_model_time)) + ' years')
+        if save_outputs and getattr(config, "save_topo_plots", True):
+            loop_topo_img  = f'{config.home_path}/{config.save_location}/{config.model_name}{get_file_sequence(int(config.total_steady_time + config.total_model_time), config)}.png'
+            plt.savefig(loop_topo_img,
+                        dpi=300,
+                        facecolor='white'
+                        )
+            if writer is not None:
+                add_file_to_writer(writer, loop_topo_img)
+        if interactive_plots:
+            plt.tight_layout()
+            plt.show(block=True)
+        else:
+            plt.clf()
 
     # Save timeseries data and event data to text files
+    if not save_outputs:
+        return mg
+
     tabular_output_dir = os.path.join(config.home_path, config.save_location, 'tabular_outputs', config.model_name)
     os.makedirs(tabular_output_dir, exist_ok=True)
     print(f"\nSaving tabular data to {tabular_output_dir}...")
+
+    if sample_prr_at_quakes and prr_rows:
+        prr_df = pd.DataFrame(prr_rows)
+        prr_csv = os.path.join(tabular_output_dir, f"{config.model_name}_prr_at_quakes.csv")
+        prr_xlsx = os.path.join(tabular_output_dir, f"{config.model_name}_prr_at_quakes.xlsx")
+        prr_png = os.path.join(tabular_output_dir, f"{config.model_name}_prr_at_quakes.png")
+        prr_df.to_csv(prr_csv, index=False)
+        with pd.ExcelWriter(prr_xlsx, engine="openpyxl") as writer_xlsx:
+            prr_df.to_excel(writer_xlsx, sheet_name="prr_at_quakes", index=False)
+            summary = pd.DataFrame(
+                [
+                    {
+                        "model_name": config.model_name,
+                        "n_events": len(prr_df),
+                        "PRR_DT_mean": float(prr_df["PRR_DT"].mean()),
+                        "PRR_DT_std": float(prr_df["PRR_DT"].std()),
+                        "PRR_DT_min": float(prr_df["PRR_DT"].min()),
+                        "PRR_DT_max": float(prr_df["PRR_DT"].max()),
+                        "Nae": float(prr_df["Nae"].iloc[0]),
+                        "slip_rate_mm_yr": float(config.slip_rate),
+                    }
+                ]
+            )
+            summary.to_excel(writer_xlsx, sheet_name="summary", index=False)
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.plot(prr_df["model_year"], prr_df["PRR_DT"], marker="o", ms=3, lw=1)
+        ax.axhline(1.0, color="gray", ls="--", lw=0.8)
+        ax.set_xlabel("Model year")
+        ax.set_ylabel("PRR_DT (R_10 / R_50)")
+        ax.set_title(f"{config.model_name}: PRR after earthquake events")
+        ax.grid(True, alpha=0.3)
+        fig.tight_layout()
+        fig.savefig(prr_png, dpi=220, facecolor="white")
+        plt.close(fig)
+
+        print(f"Saved PRR-at-quakes CSV to {prr_csv}")
+        print(f"Saved PRR-at-quakes workbook to {prr_xlsx}")
+        print(f"Saved PRR-at-quakes plot to {prr_png}")
 
     # Ensure Mean_da, Mean_elev, Mean_soil are numpy arrays
     mean_da_arr = np.array(Mean_da)
@@ -494,4 +654,3 @@ def run_geomorf_loop(config, writer):
 # # ax.set_ylabel('Depth (m)')
 # # ax.legend(loc='upper right')
 # # plt.show()
-

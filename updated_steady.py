@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # import time
 import numpy as np
+import numpy_compat  # noqa: F401  # NumPy 2.0 vs Landlab: must run before landlab
 import matplotlib.pyplot as plt
 import pickle
+import os
 from collections import defaultdict
 from copy import deepcopy
 
@@ -14,7 +16,6 @@ from landlab.io.netcdf import write_raster_netcdf
 from landlab.io.native_landlab import save_grid
 
 #Hillslope geomorphology
-from landlab.components import ExponentialWeatherer
 from landlab.components import DepthDependentTaylorDiffuser
 # from landlab.components import DepthDependentDiffuser
 
@@ -22,6 +23,7 @@ from landlab.components import DepthDependentTaylorDiffuser
 from landlab.components import FlowDirectorMFD #trying the FlowDirectorMFD
 from landlab.components import FlowAccumulator, Space, FastscapeEroder, PriorityFloodFlowRouter
 from landlab.components.space import SpaceLargeScaleEroder
+from landlab_compat import exponential_weatherer
 from util import get_file_sequence, add_file_to_writer, save_grid_state
 
 def init_grid(config):
@@ -76,9 +78,7 @@ def build_steady_topo(config, writer):
     #Weathering
     
     #if the new version of landlab is only one _, if the old one is __
-    expweath=ExponentialWeatherer(mg, 
-                                soil_production_maximum_rate=config.P0, 
-                                soil_production_decay_depth=config.Hstar)
+    expweath = exponential_weatherer(mg, config.P0, config.Hstar)
 
 
     # Hillslope with Taylor Diffuser
@@ -155,16 +155,24 @@ def build_steady_topo(config, writer):
         print(time)
         time = time + config.dt_steady
 
-    # Save final state
+    # Save final state into the in-memory dictionary
     final_state = save_grid_state(mg, config.total_steady_time)
     grid_states[config.total_steady_time] = deepcopy(mg)
 
-    # Save all states to pickle file
+    # Save all states (time -> grid) to a pickle file in the model's output folder
     output_filename = f'{config.home_path}/{config.save_location}/{config.model_name}_grid_states.pkl'
     with open(output_filename, 'wb') as f:
         pickle.dump(grid_states, f)
     
     print(f"\nSaved {len(grid_states)} grid states to {output_filename}")
+
+    # Also save the final steady-state grid as a standalone pickle for faulting runs
+    steady_dir = os.path.join(config.home_path, "output", "steady_state_files")
+    os.makedirs(steady_dir, exist_ok=True)
+    final_grid_path = os.path.join(steady_dir, f"final_state_{config.model_name}.pkl")
+    with open(final_grid_path, "wb") as f:
+        pickle.dump(deepcopy(mg), f)
+    print(f"Saved final steady grid to {final_grid_path}")
 
     return mg  # Return the final grid instead of the metrics
 

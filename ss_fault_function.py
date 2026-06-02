@@ -1,4 +1,5 @@
 import numpy as np
+import numpy_compat  # noqa: F401  # NumPy 2.0 vs Landlab
 import matplotlib.pyplot as plt
 
 from landlab import RasterModelGrid, imshow_grid, imshowhs_grid # landlab grid components
@@ -32,50 +33,38 @@ def ss_fault(grid, fault_loc_y, slip_rate, method, accumulate):
     print('number of columns dropped per event is: ' + str(number_cols))
 
     if method == 'drop':
-        # mg_topo_reshaped=np.reshape(z_original_reshaped,(nrows,ncols)) #reshape again as a np.array
+        # Drop/replicate on lower domain (footwall) interior columns; upper (hanging wall) fixed.
+        # Right lateral: remove trailing interior columns, pad at left with duplicated first column of shortened strip.
+        # Interior only (1:-1) matches roll boundary handling.
 
-        #FOR Z
-        hang_z = z_original_reshaped[fault_loc_y:, :]  # HANGING WALL ARRAY
-        hang_z[:, 0] = hang_z[:, 1]
-        foot_z = z_original_reshaped[:fault_loc_y, :]  # FOOTWALL ARRAY
-        index_columns_to_be_deleted = -1 * number_cols # how many columns are going to get dropped and its index, negative because are the last ones
-        # and we are doing right lateral. If left lateral will have to take the -1 and drop the beggining of the array not the end
-        hang_drop_z = np.delete(hang_z, np.s_[index_columns_to_be_deleted:], axis=1)  # this is the hanging wall without the slipped columns
-        # number_columns_dropped is slip_per_event
-        filling_z = np.array([hang_drop_z[:,0], ] * number_cols).transpose()  # this create the columns that we are going to add to fill the empty spaces
-        # now we stack them horizontally this is the order for right lateral, if left the filling is the second argument.
-        new_hang_z = np.hstack((filling_z, hang_drop_z))  # this is the new hangign wall with the removed columns and with the added ones
-        # now we stack the footwall that haven't change with the new hanging wall
-        new_z = np.vstack((foot_z, new_hang_z))
-        # now reshape back to 1D to put it as imput in the Landlab grid
+        index_columns_to_be_deleted = -1 * number_cols
+        hang_z = z_original_reshaped[fault_loc_y:, :]
+        foot_z = z_original_reshaped[:fault_loc_y, :]
+        foot_in_z = foot_z[:, 1:-1]
+        foot_drop_z = np.delete(foot_in_z, np.s_[index_columns_to_be_deleted:], axis=1)
+        filling_z = np.array([foot_drop_z[:, 0], ] * number_cols).transpose()
+        foot_z[:, 1:-1] = np.hstack((filling_z, foot_drop_z))
+        new_z = np.vstack((foot_z, hang_z))
         z_reshaped_after_shift = np.reshape(new_z, (nrows * ncols))
         z_original[:] = z_reshaped_after_shift
 
-        # FOR soil
-        hang_s = soil_original_reshaped[fault_loc_y:, :]  # HANGING WALL ARRAY
-        hang_s[:, 0] = hang_s[:, 1]
-        foot_s = soil_original_reshaped[:fault_loc_y, :]  # FOOTWALL ARRAY
-        index_columns_to_be_deleted = -1 * number_cols
-        hang_drop_s = np.delete(hang_s, np.s_[index_columns_to_be_deleted:],axis=1)
-        filling_s = np.array([hang_drop_s[:,0], ] * number_cols).transpose()
-        new_hang_s = np.hstack((filling_s, hang_drop_s))
-        new_soil = np.vstack((foot_s, new_hang_s))
-
-        # now reshape back to 1D to put it as imput in the Landlab grid
+        hang_s = soil_original_reshaped[fault_loc_y:, :]
+        foot_s = soil_original_reshaped[:fault_loc_y, :]
+        foot_in_s = foot_s[:, 1:-1]
+        foot_drop_s = np.delete(foot_in_s, np.s_[index_columns_to_be_deleted:], axis=1)
+        filling_s = np.array([foot_drop_s[:, 0], ] * number_cols).transpose()
+        foot_s[:, 1:-1] = np.hstack((filling_s, foot_drop_s))
+        new_soil = np.vstack((foot_s, hang_s))
         soil_reshaped_after_shift = np.reshape(new_soil, (nrows * ncols))
         soil_original[:] = soil_reshaped_after_shift
 
-        # FOR bedrock
-        hang_b = bed_original_reshaped[fault_loc_y:, :]  # HANGING WALL ARRAY
-        hang_b[:, 0] = hang_b[:, 1]
-        foot_b = bed_original_reshaped[:fault_loc_y, :]  # FOOTWALL ARRAY
-        index_columns_to_be_deleted = -1 * number_cols
-        hang_drop_b = np.delete(hang_b, np.s_[index_columns_to_be_deleted:], axis=1)
-        filling_b = np.array([hang_drop_b[:,0], ] * number_cols).transpose()
-        new_hang_b = np.hstack((filling_b, hang_drop_b))
-        new_bed = np.vstack((foot_b, new_hang_b))
-
-        # now reshape back to 1D to put it as imput in the Landlab grid
+        hang_b = bed_original_reshaped[fault_loc_y:, :]
+        foot_b = bed_original_reshaped[:fault_loc_y, :]
+        foot_in_b = foot_b[:, 1:-1]
+        foot_drop_b = np.delete(foot_in_b, np.s_[index_columns_to_be_deleted:], axis=1)
+        filling_b = np.array([foot_drop_b[:, 0], ] * number_cols).transpose()
+        foot_b[:, 1:-1] = np.hstack((filling_b, foot_drop_b))
+        new_bed = np.vstack((foot_b, hang_b))
         bed_reshaped_after_shift = np.reshape(new_bed, (nrows * ncols))
         bed_original[:] = bed_reshaped_after_shift
 
@@ -86,21 +75,21 @@ def ss_fault(grid, fault_loc_y, slip_rate, method, accumulate):
         # plt.show()
 
     if method == 'roll':
-        # METHOD TWO ROLLING THE DROPPED COLUMN AND ADDING IT AT THE BEGGINING
-        # so we will keep the bottom without moving
+        # Roll lower domain (footwall) along strike; upper domain (hanging wall) stays fixed.
+        # Interior columns only (1:-1) match prior boundary handling.
 
-        z_top_new = np.roll(z_original_reshaped[fault_loc_y:, 1:-1], number_cols, axis=1)
-        z_original_reshaped[fault_loc_y:, 1:-1] = z_top_new
+        z_bottom_new = np.roll(z_original_reshaped[:fault_loc_y, 1:-1], number_cols, axis=1)
+        z_original_reshaped[:fault_loc_y, 1:-1] = z_bottom_new
         z_reshaped_after_shift = np.reshape(z_original_reshaped, (nrows * ncols))
         z_original[:] = z_reshaped_after_shift
 
-        soil_top_new = np.roll(soil_original_reshaped[fault_loc_y:, 1:-1], number_cols, axis=1)
-        soil_original_reshaped[fault_loc_y:, 1:-1] = soil_top_new
+        soil_bottom_new = np.roll(soil_original_reshaped[:fault_loc_y, 1:-1], number_cols, axis=1)
+        soil_original_reshaped[:fault_loc_y, 1:-1] = soil_bottom_new
         soil_reshaped_after_shift = np.reshape(soil_original_reshaped, (nrows * ncols))
         soil_original[:] = soil_reshaped_after_shift
 
-        bed_top_new = np.roll(bed_original_reshaped[fault_loc_y:, 1:-1], number_cols, axis=1)
-        bed_original_reshaped[fault_loc_y:, 1:-1] = bed_top_new
+        bed_bottom_new = np.roll(bed_original_reshaped[:fault_loc_y, 1:-1], number_cols, axis=1)
+        bed_original_reshaped[:fault_loc_y, 1:-1] = bed_bottom_new
         bed_reshaped_after_shift = np.reshape(bed_original_reshaped, (nrows * ncols))
         bed_original[:] = bed_reshaped_after_shift
 
