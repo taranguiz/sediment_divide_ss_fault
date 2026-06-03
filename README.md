@@ -36,6 +36,7 @@ fault-to-divide distance, and `R_far` is full strike-parallel profile relief at
 - `prr_metrics.py` - PRR and `Nae` helper functions.
 - `run_prr_hub_matrix.py` - hub-ready runner for planned PRR experiments.
 - `config/prr_hub_run_matrix.csv` - planned slip-rate matrix.
+- `config/prr_hub_run_matrix_all.csv` - comprehensive official rerun matrix.
 - `config/prr_family_templates.json` - committed family parameter templates.
 - `notes/` - project notes, handoff context, naming rules, and PRR method notes.
 
@@ -73,12 +74,29 @@ Run all enabled planned models:
 python run_prr_hub_matrix.py
 ```
 
+Run the comprehensive official rerun matrix, including DT and Sed-1 through
+Sed-5:
+
+```bash
+python run_prr_hub_matrix.py --matrix config/prr_hub_run_matrix_all.csv
+```
+
 By default, the hub runner saves sparse NetCDF snapshots and PRR/event tables,
 but skips topography PNG frames to reduce disk use. To save PNG frames too:
 
 ```bash
 python run_prr_hub_matrix.py --label Sed-3_20 --with-topo-plots
 ```
+
+To save an MP4 evolution video:
+
+```bash
+python run_prr_hub_matrix.py --label Sed-3_20 --with-video
+```
+
+`--with-video` automatically saves the sparse topography PNG frames used to
+build the movie and deletes those frame PNGs after they are added to the MP4.
+Use `--keep-video-frames` if you also want to keep the PNGs.
 
 The matrix stores `total_slip`, not fixed run duration. For the current
 `total_slip = 1000 m`, run durations are:
@@ -101,9 +119,10 @@ final_state_Sediment_5_Duvall_Tucker.pkl
 final_state_Sediment_4_Duvall_Tucker_5.pkl
 ```
 
-Optional detachment-limited comparison:
+The comprehensive official matrix also needs:
 
 ```text
+final_state_Sediment_2_Duvall_Tucker.pkl
 final_state_Duvall_Tucker_5.nc
 ```
 

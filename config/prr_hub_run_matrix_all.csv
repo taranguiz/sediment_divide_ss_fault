@@ -1,0 +1,25 @@
+plot_label,model_name,family,slip_rate_mm_yr,total_slip,initial_state_model_name,steady_state_file,max_netcdf_outputs,enabled,notes
+DT_05,PRR1000_DT_05,DT,0.5,1000,Duvall_Tucker_5,final_state_Duvall_Tucker_5.nc,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+DT_5,PRR1000_DT_5,DT,5,1000,Duvall_Tucker_5,final_state_Duvall_Tucker_5.nc,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+DT_10,PRR1000_DT_10,DT,10,1000,Duvall_Tucker_5,final_state_Duvall_Tucker_5.nc,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+DT_20,PRR1000_DT_20,DT,20,1000,Duvall_Tucker_5,final_state_Duvall_Tucker_5.nc,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-1_05,PRR1000_Sed_1_05,Sed-1,0.5,1000,Sediment_2_Duvall_Tucker,final_state_Sediment_2_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-1_5,PRR1000_Sed_1_5,Sed-1,5,1000,Sediment_2_Duvall_Tucker,final_state_Sediment_2_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-1_10,PRR1000_Sed_1_10,Sed-1,10,1000,Sediment_2_Duvall_Tucker,final_state_Sediment_2_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-1_20,PRR1000_Sed_1_20,Sed-1,20,1000,Sediment_2_Duvall_Tucker,final_state_Sediment_2_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-2_05,PRR1000_Sed_2_05,Sed-2,0.5,1000,Sediment_3_Duvall_Tucker,final_state_Sediment_3_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-2_5,PRR1000_Sed_2_5,Sed-2,5,1000,Sediment_3_Duvall_Tucker,final_state_Sediment_3_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-2_10,PRR1000_Sed_2_10,Sed-2,10,1000,Sediment_3_Duvall_Tucker,final_state_Sediment_3_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-2_20,PRR1000_Sed_2_20,Sed-2,20,1000,Sediment_3_Duvall_Tucker,final_state_Sediment_3_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-3_05,PRR1000_Sed_3_05,Sed-3,0.5,1000,Sediment_4_Duvall_Tucker,final_state_Sediment_4_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-3_5,PRR1000_Sed_3_5,Sed-3,5,1000,Sediment_4_Duvall_Tucker,final_state_Sediment_4_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-3_10,PRR1000_Sed_3_10,Sed-3,10,1000,Sediment_4_Duvall_Tucker,final_state_Sediment_4_Duvall_Tucker.pkl,10,yes,Official rerun using Sed-3 steady state rather than old redundant Sed-3_10 steady file.
+Sed-3_20,PRR1000_Sed_3_20,Sed-3,20,1000,Sediment_4_Duvall_Tucker,final_state_Sediment_4_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-4_05,PRR1000_Sed_4_05,Sed-4,0.5,1000,Sediment_5_Duvall_Tucker,final_state_Sediment_5_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-4_5,PRR1000_Sed_4_5,Sed-4,5,1000,Sediment_5_Duvall_Tucker,final_state_Sediment_5_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-4_10,PRR1000_Sed_4_10,Sed-4,10,1000,Sediment_5_Duvall_Tucker,final_state_Sediment_5_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-4_20,PRR1000_Sed_4_20,Sed-4,20,1000,Sediment_5_Duvall_Tucker,final_state_Sediment_5_Duvall_Tucker.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-5_05,PRR1000_Sed_5_05,Sed-5,0.5,1000,Sediment_4_Duvall_Tucker_5,final_state_Sediment_4_Duvall_Tucker_5.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-5_5,PRR1000_Sed_5_5,Sed-5,5,1000,Sediment_4_Duvall_Tucker_5,final_state_Sediment_4_Duvall_Tucker_5.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-5_10,PRR1000_Sed_5_10,Sed-5,10,1000,Sediment_4_Duvall_Tucker_5,final_state_Sediment_4_Duvall_Tucker_5.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.
+Sed-5_20,PRR1000_Sed_5_20,Sed-5,20,1000,Sediment_4_Duvall_Tucker_5,final_state_Sediment_4_Duvall_Tucker_5.pkl,10,yes,Official rerun with right-lateral lower-domain motion and PRR after every earthquake.

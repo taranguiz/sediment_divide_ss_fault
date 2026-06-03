@@ -347,6 +347,8 @@ def run_geomorf_loop(
                 )
                 if writer is not None:
                     add_file_to_writer(writer, loop_topo_img)
+                    if getattr(config, "delete_video_frames", False):
+                        os.remove(loop_topo_img)
 
             plt.clf()
             
@@ -453,6 +455,8 @@ def run_geomorf_loop(
                         )
             if writer is not None:
                 add_file_to_writer(writer, loop_topo_img)
+                if getattr(config, "delete_video_frames", False):
+                    os.remove(loop_topo_img)
         if interactive_plots:
             plt.tight_layout()
             plt.show(block=True)

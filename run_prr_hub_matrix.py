@@ -8,7 +8,7 @@ This script is intended for the OpenEarthscape/JupyterHub workflow:
 3. Run this script for one model at a time or for the enabled matrix rows.
 
 Outputs are sparse NetCDF snapshots plus PRR/event tables. Topography PNG
-frames are off by default to keep disk use small.
+frames and MP4 videos are off by default to keep disk use small.
 """
 from __future__ import annotations
 
@@ -108,7 +108,13 @@ def _template_to_nested_config(model_name: str, template: dict, slip_rate: float
     }
 
 
-def _build_config(row: dict[str, str], template: dict, *, save_topo_plots: bool) -> SimpleNamespace:
+def _build_config(
+    row: dict[str, str],
+    template: dict,
+    *,
+    save_topo_plots: bool,
+    delete_video_frames: bool,
+) -> SimpleNamespace:
     model_name = row["model_name"]
     slip_rate = float(row["slip_rate_mm_yr"])
     total_slip = float(row["total_slip"])
@@ -138,6 +144,7 @@ def _build_config(row: dict[str, str], template: dict, *, save_topo_plots: bool)
     data["sample_prr_at_quakes"] = True
     data["save_topo_plots"] = save_topo_plots
     data["topo_plot_frequency"] = data["frequency_output"]
+    data["delete_video_frames"] = delete_video_frames
 
     data["nrows"] = int(float(data["ymax"]) / float(data["dxy"]))
     data["ncols"] = int(float(data["xmax"]) / float(data["dxy"]))
@@ -211,6 +218,16 @@ def parse_args() -> argparse.Namespace:
         help="Save topography PNG frames. Off by default to reduce hub storage.",
     )
     parser.add_argument(
+        "--with-video",
+        action="store_true",
+        help="Save an MP4 evolution video. Implies --with-topo-plots.",
+    )
+    parser.add_argument(
+        "--keep-video-frames",
+        action="store_true",
+        help="Keep the temporary PNG frames used to build the MP4.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print selected runs and check steady-state files without running models.",
@@ -234,7 +251,8 @@ def main() -> None:
         config = _build_config(
             row,
             templates[row["family"]],
-            save_topo_plots=args.with_topo_plots,
+            save_topo_plots=args.with_topo_plots or args.with_video,
+            delete_video_frames=args.with_video and not args.keep_video_frames,
         )
         print(
             f"{row['plot_label']} -> {config.model_name}: "
@@ -250,13 +268,26 @@ def main() -> None:
         from geomorph_dynamics_loop_trying_something import run_geomorf_loop
 
         _write_config_snapshot(config)
-        run_geomorf_loop(
-            config,
-            writer=None,
-            interactive_plots=False,
-            save_outputs=True,
-            sample_prr_at_quakes=True,
-        )
+        writer = None
+        if args.with_video:
+            import imageio
+
+            output_dir = ROOT / config.save_location
+            output_dir.mkdir(parents=True, exist_ok=True)
+            video_path = output_dir / f"{config.model_name}_evolution.mp4"
+            writer = imageio.get_writer(video_path, fps=20)
+            print(f"Saving evolution video to {video_path}")
+        try:
+            run_geomorf_loop(
+                config,
+                writer=writer,
+                interactive_plots=False,
+                save_outputs=True,
+                sample_prr_at_quakes=True,
+            )
+        finally:
+            if writer is not None:
+                writer.close()
 
 
 if __name__ == "__main__":

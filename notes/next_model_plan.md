@@ -27,6 +27,15 @@ shared model duration. The current total_slip for the hub matrix is `1000 m`, so
 the runner computes different `total_model_time` values for different slip
 rates.
 
+For the official rerun set, use:
+
+```bash
+python run_prr_hub_matrix.py --matrix config/prr_hub_run_matrix_all.csv
+```
+
+This matrix includes DT and Sed-1 through Sed-5 at 0.5, 5, 10, and 20 mm/yr,
+with output folders prefixed by `PRR1000_`.
+
 ## Planned Slip-Rate Runs
 
 These can reuse existing steady states:

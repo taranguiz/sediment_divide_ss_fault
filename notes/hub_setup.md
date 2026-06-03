@@ -38,20 +38,16 @@ mkdir -p output/steady_state_files
 Upload/copy these files into it:
 
 ```text
+final_state_Sediment_2_Duvall_Tucker.pkl
 final_state_Sediment_3_Duvall_Tucker.pkl
 final_state_Sediment_4_Duvall_Tucker.pkl
 final_state_Sediment_5_Duvall_Tucker.pkl
 final_state_Sediment_4_Duvall_Tucker_5.pkl
-```
-
-Optional:
-
-```text
 final_state_Duvall_Tucker_5.nc
 ```
 
-The required sediment steady states are about 28 MB total locally. Including the
-optional DT NetCDF is about 31 MB total.
+The comprehensive official rerun matrix needs all six files above. Together
+they are about 38 MB locally.
 
 ## Check Before Running
 
@@ -77,10 +73,11 @@ Run all enabled sediment variants:
 python run_prr_hub_matrix.py
 ```
 
-Run the optional DT comparison:
+Run the comprehensive official rerun matrix, including DT and Sed-1 through
+Sed-5:
 
 ```bash
-python run_prr_hub_matrix.py --label DT_10
+python run_prr_hub_matrix.py --matrix config/prr_hub_run_matrix_all.csv
 ```
 
 ## Outputs
@@ -106,6 +103,18 @@ output/<model_name>/netcdf_outputs/<model_name>/
 
 The hub runner keeps topography PNG frames off by default. This helps keep the
 run close to the goal of about 10 NetCDF snapshots plus tabular PRR outputs.
+To save an MP4 evolution video for a specific run, add `--with-video`:
+
+```bash
+python run_prr_hub_matrix.py --matrix config/prr_hub_run_matrix_all.csv --label Sed-3_20 --with-video
+```
+
+By default, `--with-video` deletes each temporary PNG frame after adding it to
+the MP4. Use `--keep-video-frames` if you also want the frame PNGs.
+
+The comprehensive matrix writes output folders prefixed with `PRR1000_`, such
+as `output/PRR1000_Sed_3_20/`. This keeps official 1000 m total-slip reruns
+separate from earlier test outputs.
 
 The run matrix uses the same `total_slip` for every slip rate. The
 current `total_slip` is `1000 m`, and `run_prr_hub_matrix.py` computes run duration
