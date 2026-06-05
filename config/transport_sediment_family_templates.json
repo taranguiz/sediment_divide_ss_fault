@@ -1,0 +1,33 @@
+{
+  "transport_sediment": {
+    "alt_name": "Transport sediment steady topography dynamic run family",
+    "ymax": 200,
+    "xmax": 1000,
+    "dxy": 5,
+    "H0": 1,
+    "uplift_rate": 0.002,
+    "Sc": 0.7,
+    "Hstar": 0.2,
+    "V0": 0.04,
+    "P0": 0.0005,
+    "run_off": 1,
+    "K_sed": 0.00234,
+    "K_br": 0.000234,
+    "F_f": 1,
+    "phi": 0,
+    "H_star": 0.1,
+    "Vs": 1,
+    "m_sp": 0.5,
+    "n_sp": 1.0,
+    "sp_crit_sed": 0.0,
+    "sp_crit_br": 0.0,
+    "total_slip": 1000,
+    "method": "roll",
+    "total_model_time": 1000000,
+    "total_steady_time": 1000000,
+    "dt_steady": 100,
+    "dt_model": 100,
+    "fluvial_freq": 100000,
+    "fluvial_len": 15000
+  }
+}

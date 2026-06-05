@@ -38,6 +38,8 @@ fault-to-divide distance, and `R_far` is full strike-parallel profile relief at
 - `run_prr_hub_matrix.py` - hub-ready runner for planned PRR experiments.
 - `config/diffusion4_run_matrix.csv` - `diffusion4` slip-rate matrix.
 - `config/diffusion4_family_templates.json` - `diffusion4` parameter template.
+- `config/transport_sediment_run_matrix.csv` - `transport_sediment` slip-rate matrix.
+- `config/transport_sediment_family_templates.json` - `transport_sediment` parameter template.
 
 Generated outputs are intentionally ignored by Git:
 
@@ -71,6 +73,14 @@ Run all enabled `diffusion4` models:
 
 ```bash
 python run_prr_hub_matrix.py
+```
+
+Run the `transport_sediment` family:
+
+```bash
+python run_prr_hub_matrix.py \
+  --matrix config/transport_sediment_run_matrix.csv \
+  --templates config/transport_sediment_family_templates.json
 ```
 
 By default, the hub runner saves sparse NetCDF snapshots and PRR/event tables,
