@@ -100,6 +100,7 @@ The matrix stores `total_slip`, not fixed run duration. For the current
 5 mm/yr   ->   200,000 yr
 10 mm/yr  ->   100,000 yr
 20 mm/yr  ->    50,000 yr
+30 mm/yr  ->    33,400 yr
 ```
 
 ## Required Steady States For Planned Runs
