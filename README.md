@@ -95,6 +95,7 @@ The matrix stores `total_slip`, not fixed run duration. For the current
 `total_slip = 1000 m`, run durations are:
 
 ```text
+0.1 mm/yr -> 10,000,000 yr
 0.5 mm/yr -> 2,000,000 yr
 1 mm/yr   -> 1,000,000 yr
 5 mm/yr   ->   200,000 yr
