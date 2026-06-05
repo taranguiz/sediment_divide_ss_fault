@@ -94,9 +94,10 @@ To save an MP4 evolution video:
 python run_prr_hub_matrix.py --label Sed-3_20 --with-video
 ```
 
-`--with-video` automatically saves the sparse topography PNG frames used to
-build the movie and deletes those frame PNGs after they are added to the MP4.
-Use `--keep-video-frames` if you also want to keep the PNGs.
+`--with-video` saves one frame after each earthquake/slip event by default,
+then deletes each temporary PNG frame after adding it to the MP4. Use
+`--video-frame-mode sparse` for the older sparse-frame behavior, or
+`--keep-video-frames` if you also want to keep the PNGs.
 
 The matrix stores `total_slip`, not fixed run duration. For the current
 `total_slip = 1000 m`, run durations are:

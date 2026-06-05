@@ -24,12 +24,18 @@ from landlab.components import DepthDependentDiffuser
 
 #Fluvial Geomorphology and Flow routing
 from landlab.components import FlowDirectorMFD #trying the FlowDirectorMFD
-from landlab.components import FlowAccumulator, Space, FastscapeEroder, PriorityFloodFlowRouter
+from landlab.components import FlowAccumulator, Space, PriorityFloodFlowRouter
 from landlab.components.space import SpaceLargeScaleEroder
 
 from ss_fault_function import ss_fault
 from landlab_compat import exponential_weatherer
-from prr_metrics import profile_row_indices, compute_prr_dt, compute_nae
+from prr_metrics import (
+    far_fault_swath_row_indices,
+    near_fault_swath_row_indices,
+    x_slice_from_segment,
+    compute_prr_swath_profile,
+    compute_nae,
+)
 from util import get_file_sequence, add_file_to_writer
 from copy import deepcopy # Ensure deepcopy is specifically imported
 #READING STEADY STATE TOPO
@@ -106,13 +112,32 @@ def save_grid_state(mg, time):
 
 
 def _sample_prr(mg, config, fault_row, time, event_number):
-    """Sample full-profile PRR after a slip event."""
+    """Sample relief-ratio PRR after a slip event."""
     nrows = int(mg.number_of_node_rows)
     ncols = int(mg.number_of_node_columns)
     divide_row = nrows - 1
-    row_near, row_far = profile_row_indices(fault_row, divide_row)
+    row_near_swath_start, row_near_swath_end = near_fault_swath_row_indices(
+        fault_row,
+        divide_row,
+    )
+    row_far_swath_start, row_far_swath_end = far_fault_swath_row_indices(
+        fault_row,
+        divide_row,
+    )
     z_2d = mg.at_node["topographic__elevation"].reshape((nrows, ncols))
-    prr = compute_prr_dt(z_2d, row_near, row_far)
+    x_slice_1000m = x_slice_from_segment(
+        ncols,
+        float(config.dxy),
+        segment_length_m=1000.0,
+    )
+    prr_1000m = compute_prr_swath_profile(
+        z_2d,
+        row_near_swath_start,
+        row_near_swath_end,
+        row_far_swath_start,
+        row_far_swath_end,
+        x_slice=x_slice_1000m,
+    )
     nae = compute_nae(config.slip_rate, config.K_br, config.D)
 
     return {
@@ -123,15 +148,23 @@ def _sample_prr(mg, config, fault_row, time, event_number):
         "Nae": nae,
         "fault_row": int(fault_row),
         "divide_row": int(divide_row),
-        "row_near": int(row_near),
-        "row_far": int(row_far),
+        "row_near_swath_start": int(row_near_swath_start),
+        "row_near_swath_end": int(row_near_swath_end),
+        "row_far_swath_start": int(row_far_swath_start),
+        "row_far_swath_end": int(row_far_swath_end),
+        "x_segment_length_m": 1000.0,
+        "x_col_start": int(prr_1000m["x_col_start"]),
+        "x_col_end_exclusive": int(prr_1000m["x_col_end_exclusive"]),
+        "n_x_cols": int(prr_1000m["n_x_cols"]),
         "fault_y": float(mg.node_y[fault_row * ncols]),
         "divide_y": float(mg.node_y[divide_row * ncols]),
-        "y_near": float(mg.node_y[row_near * ncols]),
-        "y_far": float(mg.node_y[row_far * ncols]),
-        "PRR_DT": prr["PRR_DT"],
-        "R_near": prr["R_near"],
-        "R_far": prr["R_far"],
+        "y_near_swath_start": float(mg.node_y[row_near_swath_start * ncols]),
+        "y_near_swath_end": float(mg.node_y[row_near_swath_end * ncols]),
+        "y_far_swath_start": float(mg.node_y[row_far_swath_start * ncols]),
+        "y_far_swath_end": float(mg.node_y[row_far_swath_end * ncols]),
+        "PRR_swath_profile_1000m": prr_1000m["PRR_swath_profile"],
+        "R_near_swath_profile_1000m": prr_1000m["R_near_swath_profile"],
+        "R_far_swath_profile_1000m": prr_1000m["R_far_swath_profile"],
     }
 
 def run_geomorf_loop(
@@ -228,6 +261,9 @@ def run_geomorf_loop(
     Mean_elev= np.append(Mean_elev, np.mean(mg.at_node['topographic__elevation']))
     quakes_times=[]
     prr_rows = []
+    save_topo_plots = getattr(config, "save_topo_plots", True)
+    topo_plot_frequency = getattr(config, "topo_plot_frequency", 2000)
+    video_frame_mode = getattr(config, "video_frame_mode", "sparse")
     
     #instantiate components
     print("inititializing components")
@@ -311,6 +347,19 @@ def run_geomorf_loop(
                         event_number=len(prr_rows) + 1,
                     )
                 )
+            if save_outputs and save_topo_plots and video_frame_mode == "quake":
+                imshow_grid(mg, z, cmap='coolwarm', shrink=shrink, grid_units=['m', 'm'])
+                plt.title('Topography after ' + str(int(config.total_steady_time + time)) + ' years')
+                loop_topo_img = f'{config.home_path}/{config.save_location}/{config.model_name}{get_file_sequence(int(config.total_steady_time + time), config)}.png'
+                plt.savefig(
+                    loop_topo_img,
+                    dpi=300, facecolor='white'
+                )
+                if writer is not None:
+                    add_file_to_writer(writer, loop_topo_img)
+                    if getattr(config, "delete_video_frames", False):
+                        os.remove(loop_topo_img)
+                plt.clf()
             print('one slip')
         
         accumulate += desired_slip_per_event
@@ -330,9 +379,7 @@ def run_geomorf_loop(
         #             pass
 
         
-        save_topo_plots = getattr(config, "save_topo_plots", True)
-        topo_plot_frequency = getattr(config, "topo_plot_frequency", 2000)
-        if save_topo_plots and time%topo_plot_frequency == 0: #time>0 and
+        if save_topo_plots and video_frame_mode == "sparse" and time%topo_plot_frequency == 0: #time>0 and
             imshow_grid(mg, z, cmap='coolwarm', shrink=shrink, grid_units=['m', 'm'])
             plt.title('Topography after ' + str(int(config.total_steady_time + time)) + ' years')
             if interactive_plots:
@@ -482,10 +529,24 @@ def run_geomorf_loop(
                 {
                     "model_name": config.model_name,
                     "n_events": len(prr_df),
-                    "PRR_DT_mean": float(prr_df["PRR_DT"].mean()),
-                    "PRR_DT_std": float(prr_df["PRR_DT"].std()),
-                    "PRR_DT_min": float(prr_df["PRR_DT"].min()),
-                    "PRR_DT_max": float(prr_df["PRR_DT"].max()),
+                    "PRR_swath_profile_1000m_mean": float(
+                        prr_df["PRR_swath_profile_1000m"].mean()
+                    ),
+                    "PRR_swath_profile_1000m_std": float(
+                        prr_df["PRR_swath_profile_1000m"].std()
+                    ),
+                    "PRR_swath_profile_1000m_min": float(
+                        prr_df["PRR_swath_profile_1000m"].min()
+                    ),
+                    "PRR_swath_profile_1000m_max": float(
+                        prr_df["PRR_swath_profile_1000m"].max()
+                    ),
+                    "R_near_swath_profile_1000m_mean": float(
+                        prr_df["R_near_swath_profile_1000m"].mean()
+                    ),
+                    "R_far_swath_profile_1000m_mean": float(
+                        prr_df["R_far_swath_profile_1000m"].mean()
+                    ),
                     "Nae": float(prr_df["Nae"].iloc[0]),
                     "slip_rate_mm_yr": float(config.slip_rate),
                 }
@@ -502,10 +563,16 @@ def run_geomorf_loop(
             print("openpyxl is not installed; skipped PRR XLSX workbook.")
 
         fig, ax = plt.subplots(figsize=(8, 5))
-        ax.plot(prr_df["model_year"], prr_df["PRR_DT"], marker="o", ms=3, lw=1)
+        ax.plot(
+            prr_df["model_year"],
+            prr_df["PRR_swath_profile_1000m"],
+            marker="o",
+            ms=3,
+            lw=1,
+        )
         ax.axhline(1.0, color="gray", ls="--", lw=0.8)
         ax.set_xlabel("Model year")
-        ax.set_ylabel("PRR_DT (R_10 / R_50)")
+        ax.set_ylabel("PRR")
         ax.set_title(f"{config.model_name}: PRR after earthquake events")
         ax.grid(True, alpha=0.3)
         fig.tight_layout()
@@ -524,10 +591,12 @@ def run_geomorf_loop(
     mean_soil_arr = np.array(Mean_soil)
     iterations_arr = np.array(iterations) # Defined earlier in the script
 
-    # Check if lengths match for stacking. They should if logic is correct.
-    if not (len(iterations_arr) == len(mean_da_arr) == len(mean_elev_arr) == len(mean_soil_arr)):
-        print("Warning: Length mismatch between iterations and mean values. Timeseries data might be misaligned.")
-        # Fallback: Save them separately or adjust logic if this warning appears frequently
+    # Mean arrays include one pre-loop value plus one value per loop iteration.
+    # Save the per-iteration values so the table aligns with iterations_arr.
+    if len(mean_da_arr) == len(iterations_arr) + 1:
+        mean_da_arr = mean_da_arr[1:]
+        mean_elev_arr = mean_elev_arr[1:]
+        mean_soil_arr = mean_soil_arr[1:]
 
     # Save mean values timeseries
     try:

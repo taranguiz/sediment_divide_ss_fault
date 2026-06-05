@@ -114,6 +114,7 @@ def _build_config(
     *,
     save_topo_plots: bool,
     delete_video_frames: bool,
+    video_frame_mode: str,
 ) -> SimpleNamespace:
     model_name = row["model_name"]
     slip_rate = float(row["slip_rate_mm_yr"])
@@ -145,6 +146,7 @@ def _build_config(
     data["save_topo_plots"] = save_topo_plots
     data["topo_plot_frequency"] = data["frequency_output"]
     data["delete_video_frames"] = delete_video_frames
+    data["video_frame_mode"] = video_frame_mode
 
     data["nrows"] = int(float(data["ymax"]) / float(data["dxy"]))
     data["ncols"] = int(float(data["xmax"]) / float(data["dxy"]))
@@ -223,6 +225,12 @@ def parse_args() -> argparse.Namespace:
         help="Save an MP4 evolution video. Implies --with-topo-plots.",
     )
     parser.add_argument(
+        "--video-frame-mode",
+        choices=["quake", "sparse"],
+        default="quake",
+        help="For --with-video, choose frames after quakes or sparse output intervals.",
+    )
+    parser.add_argument(
         "--keep-video-frames",
         action="store_true",
         help="Keep the temporary PNG frames used to build the MP4.",
@@ -253,6 +261,7 @@ def main() -> None:
             templates[row["family"]],
             save_topo_plots=args.with_topo_plots or args.with_video,
             delete_video_frames=args.with_video and not args.keep_video_frames,
+            video_frame_mode=args.video_frame_mode if args.with_video else "sparse",
         )
         print(
             f"{row['plot_label']} -> {config.model_name}: "
