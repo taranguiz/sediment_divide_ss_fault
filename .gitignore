@@ -2,6 +2,9 @@
 output/
 output_topo/
 
+# Local research notes
+notes/
+
 # Python
 __pycache__/
 *.py[cod]

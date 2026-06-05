@@ -1,2 +1,0 @@
-plot_label,model_name,family,slip_rate_mm_yr,total_slip,initial_state_model_name,steady_state_file,max_netcdf_outputs,enabled,notes
-VIDEO_SMOKE,PRR_VIDEO_SMOKE_SWATH,Sed-3,20,5,Sediment_4_Duvall_Tucker,final_state_Sediment_4_Duvall_Tucker.pkl,3,yes,Tiny local PRR/video smoke test only.
