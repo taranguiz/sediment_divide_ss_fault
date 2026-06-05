@@ -21,8 +21,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_MATRIX = ROOT / "config" / "prr_hub_run_matrix.csv"
-DEFAULT_TEMPLATES = ROOT / "config" / "prr_family_templates.json"
+DEFAULT_MATRIX = ROOT / "config" / "diffusion4_run_matrix.csv"
+DEFAULT_TEMPLATES = ROOT / "config" / "diffusion4_family_templates.json"
 
 
 def _read_matrix(path: Path) -> list[dict[str, str]]:

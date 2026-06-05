@@ -127,7 +127,7 @@ def _sample_prr(mg, config, fault_row, time, event_number):
     z_2d = mg.at_node["topographic__elevation"].reshape((nrows, ncols))
     x_slice_1000m = x_slice_from_segment(
         ncols,
-        float(config.dxy),
+        float(mg.dx),
         segment_length_m=1000.0,
     )
     prr_1000m = compute_prr_swath_profile(
@@ -239,7 +239,9 @@ def run_geomorf_loop(
     #desired_slip_per_event=(config.total_slip/config.total_model_time)*config.dt_model
     shrink = 0.5
     fault_loc_y=int(mg.number_of_node_rows / 3.)
-    fault_nodes = np.where(mg.node_y==(fault_loc_y*10))[0]
+    grid_dy = float(getattr(mg, "dy", mg.dx))
+    fault_y = fault_loc_y * grid_dy
+    fault_nodes = np.where(np.isclose(mg.node_y, fault_y))[0]
     #print(fault_nodes)
 
     #fluvial array (look up table)

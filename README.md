@@ -7,16 +7,17 @@ compared across model families and slip rates.
 
 ## Current Analysis Goal
 
-The near-term goal is to run slip-rate variants for the sediment model families
-and compare:
+The near-term goal is to run slip-rate variants for the `diffusion4` model
+family, initialized from the `DT_original_shape_1000x200_diffusion_4` steady
+topography, and compare:
 
 - PRR vs slip rate
 - PRR vs `Nae`
 - PRR time series after earthquake events
 
-Runs in `config/prr_hub_run_matrix.csv` use the same total_slip,
-currently `1000 m`. The runner computes `total_model_time` from slip rate, so
-slow faults run longer than fast faults.
+Runs in `config/diffusion4_run_matrix.csv` use the same total_slip, currently
+`1000 m`. The runner computes `total_model_time` from slip rate, so slow faults
+run longer than fast faults.
 
 The current PRR definition is:
 
@@ -35,10 +36,8 @@ fault-to-divide distance, and `R_far` is full strike-parallel profile relief at
 - `ss_fault_function.py` - strike-slip grid motion.
 - `prr_metrics.py` - PRR and `Nae` helper functions.
 - `run_prr_hub_matrix.py` - hub-ready runner for planned PRR experiments.
-- `config/prr_hub_run_matrix.csv` - planned slip-rate matrix.
-- `config/prr_hub_run_matrix_all.csv` - comprehensive official rerun matrix.
-- `config/prr_family_templates.json` - committed family parameter templates.
-- `notes/` - project notes, handoff context, naming rules, and PRR method notes.
+- `config/diffusion4_run_matrix.csv` - `diffusion4` slip-rate matrix.
+- `config/diffusion4_family_templates.json` - `diffusion4` parameter template.
 
 Generated outputs are intentionally ignored by Git:
 
@@ -65,33 +64,26 @@ python run_prr_hub_matrix.py --dry-run
 Run one model:
 
 ```bash
-python run_prr_hub_matrix.py --label Sed-3_20
+python run_prr_hub_matrix.py --label Diff4_5
 ```
 
-Run all enabled planned models:
+Run all enabled `diffusion4` models:
 
 ```bash
 python run_prr_hub_matrix.py
-```
-
-Run the comprehensive official rerun matrix, including DT and Sed-1 through
-Sed-5:
-
-```bash
-python run_prr_hub_matrix.py --matrix config/prr_hub_run_matrix_all.csv
 ```
 
 By default, the hub runner saves sparse NetCDF snapshots and PRR/event tables,
 but skips topography PNG frames to reduce disk use. To save PNG frames too:
 
 ```bash
-python run_prr_hub_matrix.py --label Sed-3_20 --with-topo-plots
+python run_prr_hub_matrix.py --label Diff4_5 --with-topo-plots
 ```
 
 To save an MP4 evolution video:
 
 ```bash
-python run_prr_hub_matrix.py --label Sed-3_20 --with-video
+python run_prr_hub_matrix.py --label Diff4_5 --with-video
 ```
 
 `--with-video` saves one frame after each earthquake/slip event by default,
@@ -104,6 +96,7 @@ The matrix stores `total_slip`, not fixed run duration. For the current
 
 ```text
 0.5 mm/yr -> 2,000,000 yr
+1 mm/yr   -> 1,000,000 yr
 5 mm/yr   ->   200,000 yr
 10 mm/yr  ->   100,000 yr
 20 mm/yr  ->    50,000 yr
@@ -111,23 +104,8 @@ The matrix stores `total_slip`, not fixed run duration. For the current
 
 ## Required Steady States For Planned Runs
 
-Upload these files to `output/steady_state_files/`:
+Upload/copy this file to `output/steady_state_files/`:
 
 ```text
-final_state_Sediment_3_Duvall_Tucker.pkl
-final_state_Sediment_4_Duvall_Tucker.pkl
-final_state_Sediment_5_Duvall_Tucker.pkl
-final_state_Sediment_4_Duvall_Tucker_5.pkl
+final_state_DT_original_shape_1000x200_diffusion_4.pkl
 ```
-
-The comprehensive official matrix also needs:
-
-```text
-final_state_Sediment_2_Duvall_Tucker.pkl
-final_state_Duvall_Tucker_5.nc
-```
-
-## Notes
-
-Start with `notes/README.md` when returning to the project. It points to the
-recommended reading order for the current modeling decisions and naming scheme.
