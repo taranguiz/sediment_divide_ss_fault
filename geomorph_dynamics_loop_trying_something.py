@@ -111,6 +111,38 @@ def save_grid_state(mg, time):
     return state
 
 
+def _topography_frame_path(config, time):
+    frame_dir = os.path.join(config.home_path, config.save_location, "topography_frames")
+    os.makedirs(frame_dir, exist_ok=True)
+    sequence = get_file_sequence(int(config.total_steady_time + time), config)
+    return os.path.join(frame_dir, f"{config.model_name}_topography_{sequence}.png")
+
+
+def _save_topography_frame(mg, config, time, output_path):
+    nrows = int(mg.number_of_node_rows)
+    ncols = int(mg.number_of_node_columns)
+    z_2d = mg.at_node["topographic__elevation"].reshape((nrows, ncols))
+    dx = float(mg.dx)
+    dy = float(getattr(mg, "dy", mg.dx))
+    extent = [0.0, (ncols - 1) * dx, 0.0, (nrows - 1) * dy]
+
+    fig, ax = plt.subplots(figsize=(9, 3), constrained_layout=True)
+    im = ax.imshow(
+        z_2d,
+        origin="lower",
+        extent=extent,
+        cmap="coolwarm",
+        aspect="equal",
+    )
+    cbar = fig.colorbar(im, ax=ax, shrink=0.85)
+    cbar.set_label("Topography (m)")
+    ax.set_xlabel("x (m)")
+    ax.set_ylabel("y (m)")
+    ax.set_title(f"{config.model_name}: topography after {int(config.total_steady_time + time)} yr")
+    fig.savefig(output_path, dpi=220, facecolor="white")
+    plt.close(fig)
+
+
 def _sample_prr(mg, config, fault_row, time, event_number):
     """Sample relief-ratio PRR after a slip event."""
     nrows = int(mg.number_of_node_rows)
@@ -350,18 +382,12 @@ def run_geomorf_loop(
                     )
                 )
             if save_outputs and save_topo_plots and video_frame_mode == "quake":
-                imshow_grid(mg, z, cmap='coolwarm', shrink=shrink, grid_units=['m', 'm'])
-                plt.title('Topography after ' + str(int(config.total_steady_time + time)) + ' years')
-                loop_topo_img = f'{config.home_path}/{config.save_location}/{config.model_name}{get_file_sequence(int(config.total_steady_time + time), config)}.png'
-                plt.savefig(
-                    loop_topo_img,
-                    dpi=300, facecolor='white'
-                )
+                loop_topo_img = _topography_frame_path(config, time)
+                _save_topography_frame(mg, config, time, loop_topo_img)
                 if writer is not None:
                     add_file_to_writer(writer, loop_topo_img)
                     if getattr(config, "delete_video_frames", False):
                         os.remove(loop_topo_img)
-                plt.clf()
             print('one slip')
         
         accumulate += desired_slip_per_event
@@ -382,24 +408,23 @@ def run_geomorf_loop(
 
         
         if save_topo_plots and video_frame_mode == "sparse" and time%topo_plot_frequency == 0: #time>0 and
-            imshow_grid(mg, z, cmap='coolwarm', shrink=shrink, grid_units=['m', 'm'])
-            plt.title('Topography after ' + str(int(config.total_steady_time + time)) + ' years')
+            loop_topo_img = _topography_frame_path(config, time)
+            _save_topography_frame(mg, config, time, loop_topo_img)
             if interactive_plots:
-                plt.tight_layout()
+                image = plt.imread(loop_topo_img)
+                plt.figure(figsize=(9, 4))
+                plt.imshow(image)
+                plt.axis("off")
                 plt.show(block=False)
                 plt.pause(0.8)
+                plt.close()
             if save_outputs:
-                loop_topo_img  = f'{config.home_path}/{config.save_location}/{config.model_name}{get_file_sequence(int(config.total_steady_time + time), config)}.png'
-                plt.savefig(
-                    loop_topo_img,
-                    dpi=300, facecolor='white'
-                )
                 if writer is not None:
                     add_file_to_writer(writer, loop_topo_img)
                     if getattr(config, "delete_video_frames", False):
                         os.remove(loop_topo_img)
-
-            plt.clf()
+            elif os.path.exists(loop_topo_img):
+                os.remove(loop_topo_img)
             
         if save_outputs and time%config.frequency_output == 0: # Removed time>0 condition to allow saving at t=0 if frequency allows
             if hasattr(config, 'save_format'):
@@ -494,23 +519,22 @@ def run_geomorf_loop(
         print("Warning: config.save_format not set. No final data saved.")
     
     if getattr(config, "save_topo_plots", True) or interactive_plots:
-        imshow_grid(mg, z, cmap='coolwarm', shrink=shrink, grid_units=['m', 'm'])
-        plt.title('Topography after ' + str(int(config.total_steady_time + config.total_model_time)) + ' years')
+        loop_topo_img = _topography_frame_path(config, config.total_model_time)
+        _save_topography_frame(mg, config, config.total_model_time, loop_topo_img)
         if save_outputs and getattr(config, "save_topo_plots", True):
-            loop_topo_img  = f'{config.home_path}/{config.save_location}/{config.model_name}{get_file_sequence(int(config.total_steady_time + config.total_model_time), config)}.png'
-            plt.savefig(loop_topo_img,
-                        dpi=300,
-                        facecolor='white'
-                        )
             if writer is not None:
                 add_file_to_writer(writer, loop_topo_img)
                 if getattr(config, "delete_video_frames", False):
                     os.remove(loop_topo_img)
         if interactive_plots:
-            plt.tight_layout()
+            image = plt.imread(loop_topo_img)
+            plt.figure(figsize=(9, 4))
+            plt.imshow(image)
+            plt.axis("off")
             plt.show(block=True)
-        else:
-            plt.clf()
+            plt.close()
+        elif not save_outputs and os.path.exists(loop_topo_img):
+            os.remove(loop_topo_img)
 
     # Save timeseries data and event data to text files
     if not save_outputs:
