@@ -40,6 +40,10 @@ fault-to-divide distance, and `R_far` is full strike-parallel profile relief at
 - `config/diffusion4_family_templates.json` - `diffusion4` parameter template.
 - `config/transport_sediment_run_matrix.csv` - `transport_sediment` slip-rate matrix.
 - `config/transport_sediment_family_templates.json` - `transport_sediment` parameter template.
+- `config/transport_sediment_2_run_matrix.csv` - `transport_sediment_2` slip-rate matrix.
+- `config/transport_sediment_2_family_templates.json` - `transport_sediment_2` parameter template.
+- `config/transport_sediment_3_run_matrix.csv` - `transport_sediment_3` slip-rate matrix.
+- `config/transport_sediment_3_family_templates.json` - `transport_sediment_3` parameter template.
 
 Generated outputs are intentionally ignored by Git:
 
@@ -81,6 +85,22 @@ Run the `transport_sediment` family:
 python run_prr_hub_matrix.py \
   --matrix config/transport_sediment_run_matrix.csv \
   --templates config/transport_sediment_family_templates.json
+```
+
+Run the `transport_sediment_2` family:
+
+```bash
+python run_prr_hub_matrix.py \
+  --matrix config/transport_sediment_2_run_matrix.csv \
+  --templates config/transport_sediment_2_family_templates.json
+```
+
+Run the `transport_sediment_3` family:
+
+```bash
+python run_prr_hub_matrix.py \
+  --matrix config/transport_sediment_3_run_matrix.csv \
+  --templates config/transport_sediment_3_family_templates.json
 ```
 
 By default, the hub runner saves sparse NetCDF snapshots and PRR/event tables,

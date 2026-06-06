@@ -1,0 +1,60 @@
+# Original Duvall-Tucker detachment-limited steady-state setup.
+# Only the grid shape is changed for this baseline test.
+
+saving:
+  model_name: Model_02
+  home_path: /home/jupyter-taranguiz/sediment_divide_ss_fault
+  output_filetype: netcdf
+  frequency_output: 10000
+
+comments:
+  alt_name: Increasing transport velocity
+
+shape:
+  xmax: 1000
+  ymax: 200
+  dxy: 5
+
+geomorphology:
+  H0: 1
+  uplift_rate: 0.002
+  Sc: 0.7
+  Hstar_d: 0.2
+  Hstar_w: 0.2
+  V0: 0.04
+  P0: 0.0005
+  run_off: 1
+  K_sed: 0.00234
+  K_br: 0.000234
+  F_f: 1
+  phi: 0
+  Hstar_f: 0.1
+  Vs: 2
+  m_sp: 0.5
+  n_sp: 1.0
+  sp_crit_sed: 0.0
+  sp_crit_br: 0.0
+
+tectonics:
+  total_slip: 500
+  method: roll
+  slip_rate: 5
+
+time:
+  total_steady_time: 1000000
+  dt_steady: 100
+  total_model_time: 1000000
+  dt_model: 100
+
+diagnostics:
+  diagnostic_interval: 5000
+  save_video: true
+  video_interval: 10000
+  video_fps: 8
+  delete_video_frames: true
+  random_seed: 5000
+  initial_noise_m: 1.0
+
+climate:
+  fluvial_freq: 100000
+  fluvial_len: 15000
