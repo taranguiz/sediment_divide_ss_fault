@@ -21,7 +21,9 @@ python run_prr_hub_matrix.py \
   --templates "$TEMPLATES_3" \
   --dry-run
 
-for label in TransSed2_30 TransSed2_20 TransSed2_10 TransSed2_5 TransSed2_1 TransSed2_05 TransSed2_01; do
+# These are the TransSed2 runs that were run by the original batch script
+# without videos. Do not include TransSed2_30, which was run separately.
+for label in TransSed2_20 TransSed2_10 TransSed2_5 TransSed2_1 TransSed2_05 TransSed2_01; do
   echo "Starting $label"
   python run_prr_hub_matrix.py \
     --matrix "$MATRIX_2" \
@@ -31,6 +33,7 @@ for label in TransSed2_30 TransSed2_20 TransSed2_10 TransSed2_5 TransSed2_1 Tran
   echo "Finished $label"
 done
 
+# All TransSed3 runs were run by the original batch script without videos.
 for label in TransSed3_30 TransSed3_20 TransSed3_10 TransSed3_5 TransSed3_1 TransSed3_05 TransSed3_01; do
   echo "Starting $label"
   python run_prr_hub_matrix.py \
