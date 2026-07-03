@@ -2,6 +2,9 @@ enabled,plot_label,model_name,family,initial_state_model_name,steady_state_file,
 yes,TransSed2_01,TransSed2_01,transport_sediment_2,transport_sediment_2,final_state_transport_sediment_2.pkl,0.1,1000,10
 yes,TransSed2_05,TransSed2_05,transport_sediment_2,transport_sediment_2,final_state_transport_sediment_2.pkl,0.5,1000,10
 yes,TransSed2_1,TransSed2_1,transport_sediment_2,transport_sediment_2,final_state_transport_sediment_2.pkl,1,1000,10
+yes,TransSed2_2,TransSed2_2,transport_sediment_2,transport_sediment_2,final_state_transport_sediment_2.pkl,2,1000,10
+yes,TransSed2_3,TransSed2_3,transport_sediment_2,transport_sediment_2,final_state_transport_sediment_2.pkl,3,1000,10
+yes,TransSed2_4,TransSed2_4,transport_sediment_2,transport_sediment_2,final_state_transport_sediment_2.pkl,4,1000,10
 yes,TransSed2_5,TransSed2_5,transport_sediment_2,transport_sediment_2,final_state_transport_sediment_2.pkl,5,1000,10
 yes,TransSed2_10,TransSed2_10,transport_sediment_2,transport_sediment_2,final_state_transport_sediment_2.pkl,10,1000,10
 yes,TransSed2_20,TransSed2_20,transport_sediment_2,transport_sediment_2,final_state_transport_sediment_2.pkl,20,1000,10

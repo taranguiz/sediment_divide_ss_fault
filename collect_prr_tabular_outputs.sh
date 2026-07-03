@@ -12,6 +12,9 @@ MODELS=(
   Diff4_01
   Diff4_05
   Diff4_1
+  Diff4_2
+  Diff4_3
+  Diff4_4
   Diff4_5
   Diff4_10
   Diff4_20
@@ -19,6 +22,9 @@ MODELS=(
   TransSed_01
   TransSed_05
   TransSed_1
+  TransSed_2
+  TransSed_3
+  TransSed_4
   TransSed_5
   TransSed_10
   TransSed_20
@@ -26,6 +32,9 @@ MODELS=(
   TransSed2_01
   TransSed2_05
   TransSed2_1
+  TransSed2_2
+  TransSed2_3
+  TransSed2_4
   TransSed2_5
   TransSed2_10
   TransSed2_20
@@ -33,6 +42,9 @@ MODELS=(
   TransSed3_01
   TransSed3_05
   TransSed3_1
+  TransSed3_2
+  TransSed3_3
+  TransSed3_4
   TransSed3_5
   TransSed3_10
   TransSed3_20
