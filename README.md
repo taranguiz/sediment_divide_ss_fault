@@ -121,6 +121,21 @@ then deletes each temporary PNG frame after adding it to the MP4. Use
 `--video-frame-mode sparse` for the older sparse-frame behavior, or
 `--keep-video-frames` if you also want to keep the PNGs.
 
+To bundle only the intermediate 2, 3, and 4 mm/yr outputs after running them
+on the hub:
+
+```bash
+./collect_prr_intermediate_tabular_outputs.sh
+./collect_prr_intermediate_netcdf_outputs.sh
+```
+
+The scripts create:
+
+```text
+download_bundles/prr_tabular_outputs_intermediate_slip_rates.tar.gz
+download_bundles/prr_netcdf_outputs_intermediate_slip_rates.tar.gz
+```
+
 The matrix stores `total_slip`, not fixed run duration. For the current
 `total_slip = 1000 m`, run durations are:
 
