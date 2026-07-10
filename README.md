@@ -136,6 +136,18 @@ download_bundles/prr_tabular_outputs_intermediate_slip_rates.tar.gz
 download_bundles/prr_netcdf_outputs_intermediate_slip_rates.tar.gz
 ```
 
+To bundle all family videos after running them on the hub:
+
+```bash
+./collect_prr_video_outputs.sh
+```
+
+The script creates:
+
+```text
+download_bundles/prr_video_outputs_all_families.tar.gz
+```
+
 The matrix stores `total_slip`, not fixed run duration. For the current
 `total_slip = 1000 m`, run durations are:
 
