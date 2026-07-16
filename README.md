@@ -2,31 +2,8 @@
 
 This repository contains Landlab scripts for synthetic divide/ridge mobility
 experiments around a right-lateral strike-slip fault. The current workflow
-focuses on profile relief ratio (PRR) measured after earthquake/slip events and
+focuses on extracting profile relief ratio (PRR) (Duvall and Tucker, 2015), measured after earthquake/slip events and
 compared across model families and slip rates.
-
-## Current Analysis Goal
-
-The near-term goal is to run slip-rate variants for the sediment model families
-and compare:
-
-- PRR vs slip rate
-- PRR vs `Nae`
-- PRR time series after earthquake events
-
-Runs in `config/prr_hub_run_matrix.csv` use the same total_slip,
-currently `1000 m`. The runner computes `total_model_time` from slip rate, so
-slow faults run longer than fast faults.
-
-The current PRR definition is:
-
-```text
-PRR = R_near / R_far
-```
-
-where `R_near` is full strike-parallel profile relief at 10% of the
-fault-to-divide distance, and `R_far` is full strike-parallel profile relief at
-50% of that distance.
 
 ## Repository Layout
 
@@ -74,12 +51,7 @@ Run all enabled planned models:
 python run_prr_hub_matrix.py
 ```
 
-Run the comprehensive official rerun matrix, including DT and Sed-1 through
-Sed-5:
-
-```bash
-python run_prr_hub_matrix.py --matrix config/prr_hub_run_matrix_all.csv
-```
+Run the comprehensive official rerun matrix, including all families
 
 By default, the hub runner saves sparse NetCDF snapshots and PRR/event tables,
 but skips topography PNG frames to reduce disk use. To save PNG frames too:
@@ -110,23 +82,4 @@ The matrix stores `total_slip`, not fixed run duration. For the current
 
 ## Required Steady States For Planned Runs
 
-Upload these files to `output/steady_state_files/`:
-
-```text
-final_state_Sediment_3_Duvall_Tucker.pkl
-final_state_Sediment_4_Duvall_Tucker.pkl
-final_state_Sediment_5_Duvall_Tucker.pkl
-final_state_Sediment_4_Duvall_Tucker_5.pkl
-```
-
-The comprehensive official matrix also needs:
-
-```text
-final_state_Sediment_2_Duvall_Tucker.pkl
-final_state_Duvall_Tucker_5.nc
-```
-
-## Notes
-
-Start with `notes/README.md` when returning to the project. It points to the
-recommended reading order for the current modeling decisions and naming scheme.
+Upload these files to `output/steady_state_files/`
